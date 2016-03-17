@@ -211,7 +211,7 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
         });
     }
 
-    @SuppressWarnings({"rawtypes","unchecked"})
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private OSRRootNode createRootNodeImpl(RootNode root, Class<? extends VirtualFrame> frameClass) {
         Class truffleLanguage;
         FrameDescriptor frameDescriptor;
