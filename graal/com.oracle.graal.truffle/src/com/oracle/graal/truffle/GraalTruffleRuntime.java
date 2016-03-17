@@ -126,7 +126,11 @@ public abstract class GraalTruffleRuntime extends TruffleServices implements Tru
     public GraalTruffleRuntime(Supplier<GraalRuntime> graalRuntime) {
         super("Graal Truffle Runtime");
         this.graalRuntime = graalRuntime;
-        INFO = info();
+        initializeTruffleInfo(info());
+    }
+
+    private static void initializeTruffleInfo(TruffleInfo info) {
+        INFO = info;
     }
 
     public abstract TruffleCompiler getTruffleCompiler();
