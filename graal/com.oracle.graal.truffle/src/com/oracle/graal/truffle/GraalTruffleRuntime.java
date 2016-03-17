@@ -195,7 +195,8 @@ public abstract class GraalTruffleRuntime extends TruffleServices implements Tru
         return loopNodeFactory;
     }
 
-    protected final LoopCountSupport loopCount() {
+    @Override
+    protected final LoopCountSupport<Node> loopCount() {
         return OptimizedCallTarget.LOOP_COUNT_SUPPORT;
     }
 
