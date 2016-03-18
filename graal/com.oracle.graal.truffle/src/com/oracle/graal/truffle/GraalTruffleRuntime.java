@@ -88,8 +88,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.services.Services;
 
 public abstract class GraalTruffleRuntime extends TruffleServices implements TruffleRuntime {
-    static TruffleInfo INFO;
-
     protected abstract static class BackgroundCompileQueue implements CompilerThreadFactory.DebugConfigAccess {
         private final ExecutorService compileQueue;
 
@@ -126,11 +124,6 @@ public abstract class GraalTruffleRuntime extends TruffleServices implements Tru
     public GraalTruffleRuntime(Supplier<GraalRuntime> graalRuntime) {
         super("Graal Truffle Runtime");
         this.graalRuntime = graalRuntime;
-        initializeTruffleInfo(info());
-    }
-
-    private static void initializeTruffleInfo(TruffleInfo info) {
-        INFO = info;
     }
 
     public abstract TruffleCompiler getTruffleCompiler();
@@ -197,6 +190,10 @@ public abstract class GraalTruffleRuntime extends TruffleServices implements Tru
             loopNodeFactory = loadPrioritizedServiceProvider(LoopNodeFactory.class);
         }
         return loopNodeFactory;
+    }
+
+    final TruffleInfo truffleInfo() {
+        return info();
     }
 
     @Override

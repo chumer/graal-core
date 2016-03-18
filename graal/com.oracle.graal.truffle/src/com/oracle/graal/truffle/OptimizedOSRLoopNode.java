@@ -216,7 +216,8 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
         Class truffleLanguage;
         FrameDescriptor frameDescriptor;
         if (root != null) {
-            truffleLanguage = GraalTruffleRuntime.INFO.findLanguage(root);
+            GraalTruffleRuntime runtime = (GraalTruffleRuntime) Truffle.getRuntime();
+            truffleLanguage = runtime.truffleInfo().findLanguage(root);
             frameDescriptor = root.getFrameDescriptor();
         } else {
             truffleLanguage = TruffleLanguage.class;

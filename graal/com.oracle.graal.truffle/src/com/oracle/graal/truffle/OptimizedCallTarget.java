@@ -171,7 +171,7 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
         synchronized (this) {
             if (!initialized) {
                 ensureCloned();
-                GraalTruffleRuntime.INFO.initializeCallTarget(this);
+                runtime.truffleInfo().initializeCallTarget(this);
                 initialized = true;
             }
         }
