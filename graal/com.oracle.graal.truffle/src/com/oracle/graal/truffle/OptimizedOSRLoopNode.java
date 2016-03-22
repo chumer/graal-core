@@ -590,11 +590,13 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
 
     }
 
-    static TVMCI createTVMCI() {
-        return new TVMCI();
+    static TVMCI findTVMCI() {
+        return TVMCI.INSTANCE;
     }
 
     static final class TVMCI extends LoopNode.TVMCI {
+        static final TVMCI INSTANCE = new TVMCI();
+
         private TVMCI() {
             new OptimizedDefaultOSRLoopNode().super();
         }

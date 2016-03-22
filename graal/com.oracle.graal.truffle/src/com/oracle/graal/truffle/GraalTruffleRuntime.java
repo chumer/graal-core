@@ -118,15 +118,13 @@ public abstract class GraalTruffleRuntime implements TruffleRuntime {
     protected CallMethods callMethods;
 
     private final Supplier<GraalRuntime> graalRuntime;
-    private final OptimizedOSRLoopNode.TVMCI tvmci;
 
     public GraalTruffleRuntime(Supplier<GraalRuntime> graalRuntime) {
         this.graalRuntime = graalRuntime;
-        this.tvmci = OptimizedOSRLoopNode.createTVMCI();
     }
 
     OptimizedOSRLoopNode.TVMCI truffleInfo() {
-        return tvmci;
+        return OptimizedOSRLoopNode.findTVMCI();
     }
 
     public abstract TruffleCompiler getTruffleCompiler();
@@ -313,8 +311,8 @@ public abstract class GraalTruffleRuntime implements TruffleRuntime {
 
     @Override
     public <T> T getCapability(Class<T> capability) {
-        if (capability.isInstance(tvmci)) {
-            return capability.cast(tvmci);
+        if (capability.isAssignableFrom(OptimizedOSRLoopNode.TVMCI.class)) {
+            return capability.cast(OptimizedOSRLoopNode.findTVMCI());
         }
         return null;
     }
