@@ -589,6 +589,7 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
         }
 
     }
+
     static TVMCI createTVMCI() {
         return new TVMCI();
     }
