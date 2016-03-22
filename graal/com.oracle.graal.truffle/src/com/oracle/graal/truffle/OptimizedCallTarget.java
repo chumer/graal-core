@@ -358,13 +358,13 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
     }
 
     private boolean cancelInstalledTask(Node source, CharSequence reason) {
-        return this.runtime().cancelInstalledTask(this, source, reason);
+        return runtime().cancelInstalledTask(this, source, reason);
     }
 
     private void interpreterCall() {
         if (isValid()) {
             // Stubs were deoptimized => reinstall.
-            this.runtime().reinstallStubs();
+            runtime().reinstallStubs();
         } else {
             if (!initialized) {
                 initialize();
