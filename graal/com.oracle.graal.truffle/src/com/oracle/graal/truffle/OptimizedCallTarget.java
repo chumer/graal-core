@@ -46,7 +46,6 @@ import java.util.stream.StreamSupport;
 
 import com.oracle.graal.truffle.debug.AbstractDebugCompilationListener;
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
@@ -55,7 +54,6 @@ import com.oracle.truffle.api.OptimizationFailedException;
 import com.oracle.truffle.api.ReplaceObserver;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.boot.LoopCountSupport;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.impl.DefaultCompilerOptions;
@@ -78,9 +76,7 @@ import jdk.vm.ci.meta.SpeculationLog;
 @SuppressWarnings("deprecation")
 public class OptimizedCallTarget extends InstalledCode implements RootCallTarget, ReplaceObserver, com.oracle.truffle.api.LoopCountReceiver {
     private static final RootNode UNINITIALIZED = RootNode.createConstantNode(null);
-    static final LoopCountSupport<Node> LOOP_COUNT_SUPPORT = new AccessorOptimizedCallTarget();
 
-    protected final GraalTruffleRuntime runtime;
     private SpeculationLog speculationLog;
     protected final CompilationProfile compilationProfile;
     protected final CompilationPolicy compilationPolicy;
@@ -114,10 +110,9 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
         return rootNode;
     }
 
-    public OptimizedCallTarget(OptimizedCallTarget sourceCallTarget, RootNode rootNode, GraalTruffleRuntime runtime, CompilationPolicy compilationPolicy, SpeculationLog speculationLog) {
+    public OptimizedCallTarget(OptimizedCallTarget sourceCallTarget, RootNode rootNode, CompilationPolicy compilationPolicy, SpeculationLog speculationLog) {
         super(rootNode.toString());
         this.sourceCallTarget = sourceCallTarget;
-        this.runtime = runtime;
         this.speculationLog = speculationLog;
         this.rootNode = rootNode;
         this.compilationPolicy = compilationPolicy;
@@ -131,8 +126,12 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
         this.nodeRewritingAssumption = new CyclicAssumption("nodeRewritingAssumption of " + rootNode.toString());
     }
 
+    private static GraalTruffleRuntime runtime() {
+        return (GraalTruffleRuntime) Truffle.getRuntime();
+    }
+
     public final void log(String message) {
-        runtime.log(message);
+        runtime().log(message);
     }
 
     public final boolean isCompiling() {
@@ -162,7 +161,7 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
         if (copiedRoot == null) {
             return null;
         }
-        OptimizedCallTarget splitTarget = (OptimizedCallTarget) runtime.createClonedCallTarget(this, copiedRoot);
+        OptimizedCallTarget splitTarget = (OptimizedCallTarget) runtime().createClonedCallTarget(this, copiedRoot);
         splitTarget.cloneIndex = cloneIndex++;
         return splitTarget;
     }
@@ -171,7 +170,7 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
         synchronized (this) {
             if (!initialized) {
                 ensureCloned();
-                runtime.truffleInfo().initializeCallTarget(this);
+                runtime().truffleInfo().initCallTarget(this);
                 initialized = true;
             }
         }
@@ -345,7 +344,7 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
 
     protected void invalidate(Object source, CharSequence reason) {
         if (isValid()) {
-            this.runtime.invalidateInstalledCode(this, source, reason);
+            runtime().invalidateInstalledCode(this, source, reason);
         }
         cachedNonTrivialNodeCount = -1;
     }
@@ -359,13 +358,13 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
     }
 
     private boolean cancelInstalledTask(Node source, CharSequence reason) {
-        return this.runtime.cancelInstalledTask(this, source, reason);
+        return this.runtime().cancelInstalledTask(this, source, reason);
     }
 
     private void interpreterCall() {
         if (isValid()) {
             // Stubs were deoptimized => reinstall.
-            this.runtime.reinstallStubs();
+            this.runtime().reinstallStubs();
         } else {
             if (!initialized) {
                 initialize();
@@ -382,7 +381,7 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
             if (!initialized) {
                 initialize();
             }
-            runtime.compile(this, TruffleBackgroundCompilation.getValue() && !TruffleCompilationExceptionsAreThrown.getValue());
+            runtime().compile(this, TruffleBackgroundCompilation.getValue() && !TruffleCompilationExceptionsAreThrown.getValue());
         }
     }
 
@@ -646,31 +645,5 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
 
     void setCompilationTask(Future<?> compilationTask) {
         this.compilationTask = compilationTask;
-    }
-
-    private static final class AccessorOptimizedCallTarget extends LoopCountSupport<Node> {
-        AccessorOptimizedCallTarget() {
-            super(Node.class);
-        }
-
-        @Override
-        public void onLoopCount(Node source, int count) {
-            Node node = source;
-            Node parentNode = source != null ? source.getParent() : null;
-            while (node != null) {
-                if (node instanceof OptimizedOSRLoopNode) {
-                    ((OptimizedOSRLoopNode) node).reportChildLoopCount(count);
-                }
-                parentNode = node;
-                node = node.getParent();
-            }
-            if (parentNode != null && parentNode instanceof RootNode) {
-                CallTarget target = ((RootNode) parentNode).getCallTarget();
-                if (target instanceof OptimizedCallTarget) {
-                    ((OptimizedCallTarget) target).onLoopCount(count);
-                }
-            }
-        }
-
     }
 }

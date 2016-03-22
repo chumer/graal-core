@@ -22,6 +22,7 @@
  */
 package com.oracle.graal.truffle;
 
+import com.oracle.truffle.api.CallTarget;
 import java.util.Objects;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -76,6 +77,9 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
         }
         this.repeatableNode = repeatableNode;
         this.osrThreshold = osrThreshold;
+    }
+
+    private OptimizedOSRLoopNode() {
     }
 
     protected abstract int getInvalidationBackoff();
@@ -357,6 +361,10 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
             super(repeatableNode, osrThreshold);
         }
 
+        private OptimizedDefaultOSRLoopNode() {
+            super();
+        }
+
         @Override
         protected int getInvalidationBackoff() {
             return TruffleCompilerOptions.TruffleInvalidationReprofileCount.getValue();
@@ -578,6 +586,44 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
                         throw new AssertionError("Defined frame slot " + slot + " is illegal. Revirtualization failed. Please initialize frame slot with a FrameSlotKind.");
                 }
             }
+        }
+
+    }
+    static TVMCI createTVMCI() {
+        return new TVMCI();
+    }
+
+    static final class TVMCI extends LoopNode.TVMCI {
+        private TVMCI() {
+            new OptimizedDefaultOSRLoopNode().super();
+        }
+
+        @Override
+        public void onLoopCount(Node source, int count) {
+            Node node = source;
+            Node parentNode = source != null ? source.getParent() : null;
+            while (node != null) {
+                if (node instanceof OptimizedOSRLoopNode) {
+                    ((OptimizedOSRLoopNode) node).reportChildLoopCount(count);
+                }
+                parentNode = node;
+                node = node.getParent();
+            }
+            if (parentNode != null && parentNode instanceof RootNode) {
+                CallTarget target = ((RootNode) parentNode).getCallTarget();
+                if (target instanceof OptimizedCallTarget) {
+                    ((OptimizedCallTarget) target).onLoopCount(count);
+                }
+            }
+        }
+
+        @SuppressWarnings("rawtypes")
+        final Class<? extends TruffleLanguage> findLanguage(RootNode root) {
+            return super.findLanguageClass(root);
+        }
+
+        final void initCallTarget(OptimizedCallTarget callTarget) {
+            super.initializeCallTarget(callTarget);
         }
 
     }

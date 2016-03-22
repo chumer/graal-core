@@ -128,6 +128,11 @@ public final class HotSpotTruffleRuntime extends GraalTruffleRuntime {
         setDontInlineCallBoundaryMethod();
     }
 
+    @Override
+    public String getName() {
+        return "Graal Truffle Runtime";
+    }
+
     private volatile Lazy lazy;
 
     private Lazy lazy() {
@@ -179,7 +184,7 @@ public final class HotSpotTruffleRuntime extends GraalTruffleRuntime {
         } else {
             compilationPolicy = new InterpreterOnlyCompilationPolicy();
         }
-        OptimizedCallTarget target = new OptimizedCallTarget(source, rootNode, this, compilationPolicy, new HotSpotSpeculationLog());
+        OptimizedCallTarget target = new OptimizedCallTarget(source, rootNode, compilationPolicy, new HotSpotSpeculationLog());
         rootNode.setCallTarget(target);
         callTargets.put(target, null);
 

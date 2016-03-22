@@ -63,9 +63,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.CompilerOptions;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.TruffleRuntime;
-import com.oracle.truffle.api.boot.LoopCountSupport;
-import com.oracle.truffle.api.boot.TruffleInfo;
-import com.oracle.truffle.api.boot.TruffleServices;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -87,7 +84,8 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.services.Services;
 
-public abstract class GraalTruffleRuntime extends TruffleServices implements TruffleRuntime {
+public abstract class GraalTruffleRuntime implements TruffleRuntime {
+
     protected abstract static class BackgroundCompileQueue implements CompilerThreadFactory.DebugConfigAccess {
         private final ExecutorService compileQueue;
 
@@ -120,10 +118,15 @@ public abstract class GraalTruffleRuntime extends TruffleServices implements Tru
     protected CallMethods callMethods;
 
     private final Supplier<GraalRuntime> graalRuntime;
+    private final OptimizedOSRLoopNode.TVMCI tvmci;
 
     public GraalTruffleRuntime(Supplier<GraalRuntime> graalRuntime) {
-        super("Graal Truffle Runtime");
         this.graalRuntime = graalRuntime;
+        this.tvmci = OptimizedOSRLoopNode.createTVMCI();
+    }
+
+    OptimizedOSRLoopNode.TVMCI truffleInfo() {
+        return tvmci;
     }
 
     public abstract TruffleCompiler getTruffleCompiler();
@@ -190,15 +193,6 @@ public abstract class GraalTruffleRuntime extends TruffleServices implements Tru
             loopNodeFactory = loadPrioritizedServiceProvider(LoopNodeFactory.class);
         }
         return loopNodeFactory;
-    }
-
-    final TruffleInfo truffleInfo() {
-        return info();
-    }
-
-    @Override
-    protected final LoopCountSupport<Node> loopCount() {
-        return OptimizedCallTarget.LOOP_COUNT_SUPPORT;
     }
 
     @Override
@@ -317,7 +311,11 @@ public abstract class GraalTruffleRuntime extends TruffleServices implements Tru
         return iterateImpl(frame -> frame, 0);
     }
 
+    @Override
     public <T> T getCapability(Class<T> capability) {
+        if (capability.isInstance(tvmci)) {
+            return capability.cast(tvmci);
+        }
         return null;
     }
 
