@@ -619,11 +619,11 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
         }
 
         @SuppressWarnings("rawtypes")
-        final Class<? extends TruffleLanguage> findLanguage(RootNode root) {
+        Class<? extends TruffleLanguage> findLanguage(RootNode root) {
             return super.findLanguageClass(root);
         }
 
-        final void initCallTarget(OptimizedCallTarget callTarget) {
+        void initCallTarget(OptimizedCallTarget callTarget) {
             super.initializeCallTarget(callTarget);
         }
 
