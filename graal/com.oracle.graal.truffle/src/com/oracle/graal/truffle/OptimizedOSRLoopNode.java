@@ -626,7 +626,7 @@ public abstract class OptimizedOSRLoopNode extends LoopNode implements ReplaceOb
         }
 
         void initCallTarget(OptimizedCallTarget callTarget) {
-            super.initializeCallTarget(callTarget);
+            super.installRootNode(callTarget.getRootNode());
         }
 
     }
