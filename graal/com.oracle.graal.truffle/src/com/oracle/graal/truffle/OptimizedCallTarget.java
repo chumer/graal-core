@@ -170,7 +170,7 @@ public class OptimizedCallTarget extends InstalledCode implements RootCallTarget
         synchronized (this) {
             if (!initialized) {
                 ensureCloned();
-                runtime().truffleInfo().initCallTarget(this);
+                runtime().getTvmci().onFirstExecution(this);
                 initialized = true;
             }
         }
